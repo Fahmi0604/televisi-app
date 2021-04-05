@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{ Component} from 'react';
 import './App.css';
 import {
   BrowserRouter as Router,
@@ -6,13 +6,14 @@ import {
   Route,
   Link
 } from "react-router-dom";
-import Televisi from "./container/Televisi/Televisi";
-import Keranjang from "./container/Televisi/Keranjang";
+// import Televisi from "./container/Televisi/Televisi";
+// import Keranjang from "./container/Televisi/Keranjang";
 // import apple from './apple.png'
 // import samsung1 from './samsung1.png'
 import foto from './FAHMI.jpg'
 import "react-responsive-carousel/lib/styles/carousel.min.css"; // requires a loader
 import { Carousel } from 'react-responsive-carousel';
+import './Televisi.css';
 
 function App() {
   return (
@@ -146,6 +147,244 @@ function Keranjangs() {
       <Keranjang />
     </div>
   )
+}
+
+const Post = (brg) => {
+  return (
+
+      <div className="televisi">
+          <div className="konten-televisi">
+          <p id="id-brg">ID : {brg.id}</p>
+              <div className="gambar-televisi">
+                  <img src={brg.gambar} width="150" height="150" alt="" />
+              </div>
+              <div className="isi-televisi">
+                  <p id="nama-brg">{brg.nama}</p>
+                  
+                  <p>Stok : {brg.stok} </p>
+                  <p id="harga-brg">Rp. {brg.harga}</p>
+              </div>
+              <button className="btn btn-sm" onClick={brg.tambahTelevisi.bind(this, brg.id)}>Beli</button>
+          </div>
+      </div>
+
+  )
+}
+
+const PostKeranjang = (brg) => {
+  return (
+              <tr>
+                  <td align="center">{brg.no}</td>
+                  <td align="center">{brg.id}</td>
+                  <td align="center">{brg.nama}</td>
+                  <td align="center"><img src={brg.gambar} alt="gambar" width="150" height="150"/></td>
+                  <td align="center">{brg.harga}</td>
+                  <td align="center">{brg.qty}</td>
+                  <td align="center">{brg.harga * brg.qty}</td>
+              </tr>
+  )
+}
+
+class Keranjang extends Component {
+    state = {
+        listKeranjang: []
+    }
+
+    ambilDataDariServerAPI = () => {
+        fetch('http://localhost:3002/keranjang')
+            .then(response => response.json())
+            .then(jsonHasilAmbilDariAPI => {
+                this.setState({
+                    listKeranjang: jsonHasilAmbilDariAPI
+                })
+            })
+    }
+
+    componentDidMount() {
+        this.ambilDataDariServerAPI()
+    }
+
+    handleTombolSimpan = () => {
+        fetch('http://localhost:3002/keranjang', {
+            method: 'post',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(this.state.insertKeranjang)
+        })
+            .then((Response) => {
+                this.ambilDataDariServerAPI();
+            });
+    }
+
+    render() {
+        var no = 0;
+        var total = 0;
+        return (
+            <div className="post-televisi">
+                {
+                /* <div className="form pb-2 border-bottom">
+                    <button type="submit" className="btn btn-primary" onClick={this.handleTombolSimpan}>Simpan</button>
+                </div> */}
+                <center><h2>Keranjang</h2></center>
+                <div className="tgh">
+                    <table border="1" cellpadding="5" width="100%">
+                        <tr>
+                            <th align="center">No</th>
+                            <th align="center">ID Produk</th>
+                            <th align="left">Nama</th>
+                            <th align="center">Gambar</th>
+                            <th align="center">Harga</th>
+                            <th align="center">Qty</th>
+                            <th align="center">Subtotal</th>
+                        </tr>
+                        {
+                            this.state.listKeranjang.map(televisi => {
+                                no += 1;
+                                total+=televisi.harga*televisi.qty
+                                return (
+                                    <PostKeranjang
+                                        no={no}
+                                        key={televisi.id}
+                                        id={televisi.id}
+                                        nama={televisi.nama}
+                                        harga={televisi.harga}
+                                        gambar={televisi.gambar}
+                                        stok={televisi.stok}
+                                        qty={televisi.qty}
+                                        tambahTelevisi={this.handleGetTelevisi} />
+                                )
+                            })
+                        }
+                        <tr>
+                            <td colspan="6" align="right">Total : </td>
+                            <td align="center">{total}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        )
+    }
+}
+
+class Televisi extends Component {
+    state = {
+        listTelevisi: []
+    }
+
+    ambilDataDariServerAPI = () => {
+        fetch('http://localhost:3001/televisi')
+            .then(response => response.json())
+            .then(jsonHasilAmbilDariAPI => {
+                this.setState({
+                    listTelevisi: jsonHasilAmbilDariAPI
+                })
+            })
+    }
+
+    componentDidMount() {
+        this.ambilDataDariServerAPI()
+    }
+
+    handleGetTelevisi = data => {
+        fetch(`http://localhost:3001/televisi/${data}`, { method: "GET" })
+            .then(response => response.json())
+            .then(res => {
+                // this.handleUpdateList(data, res);
+                var dataTelevisi = { ...this.state.insertKeranjang };
+                dataTelevisi["id"] = res["id"];
+                dataTelevisi["nama"] = res["nama"];
+                dataTelevisi["gambar"] = res["gambar"];
+                dataTelevisi["harga"] = res["harga"];
+                dataTelevisi["stok"] = res["stok"];
+                dataTelevisi["qty"] = 1;
+                this.setState({
+                    insertKeranjang: dataTelevisi
+                });
+            })
+            .then(() => {
+                this.handleCekKeranjang(data);
+            })
+            .then(() => {
+                this.handleTombolSimpan();
+            });
+    };
+
+    handleCekKeranjang = data => {
+        fetch(`http://localhost:3002/keranjang/${data}`, { method: "GET" }).then(
+            response => {
+                if (response.ok) {
+                    response.json().then(res => {
+                        this.handleUpdateKeranjang(data, res);
+                        this.ambilDataDariServerAPI();
+                    });
+                } else {
+                    this.handleTombolSimpan();
+                }
+            }
+        );
+    };
+
+    handleUpdateKeranjang = (data, res) => {
+        fetch(`http://localhost:3002/keranjang/${data}`, {
+            method: "PUT",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id: res["id"],
+                nama: res["nama"],
+                gambar: res["gambar"],
+                harga: res["harga"],
+                stok: res["stok"],
+                qty: res["qty"] + 1
+            })
+        });
+    };
+
+    handleTombolSimpan = () => {
+        fetch('http://localhost:3002/keranjang', {
+            method: 'post',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(this.state.insertKeranjang)
+        })
+            .then((Response) => {
+                this.ambilDataDariServerAPI();
+            });
+    }
+
+    render() {
+        return (
+            <div className="post-televisi">
+                {
+                /* <div className="form pb-2 border-bottom">
+                    <button type="submit" className="btn btn-primary" onClick={this.handleTombolSimpan}>Simpan</button>
+                </div> */}
+                <center><h2>Daftar Barang</h2></center>
+                <div className="tgh">
+                    {
+                        this.state.listTelevisi.map(televisi => {
+                            return (
+                                <Post
+                                    key={televisi.id}
+                                    id={televisi.id}
+                                    nama={televisi.nama}
+                                    harga={televisi.harga}
+                                    gambar={televisi.gambar}
+                                    stok={televisi.stok}
+                                    tambahTelevisi={this.handleGetTelevisi} />
+                            )
+                        })
+                    }
+                </div>
+            </div>
+        )
+    }
 }
 
 export default App;
